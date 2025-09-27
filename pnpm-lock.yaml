@@ -69,6 +69,9 @@ importers:
 
   apps/widget:
     dependencies:
+      '@workspace/math':
+        specifier: workspace:*
+        version: link:../../packages/math
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui
