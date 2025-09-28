@@ -1,14 +1,17 @@
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+"use client";
 
-export default function Page() {
+import React from "react";
+import { useQuery } from "convex/react";
+import { api } from "@workspace/backend/_generated/api";
+
+const page = () => {
+  const data = useQuery(api.users.getMany);
   return (
-    <div className="flex items-center justify-center min-h-svh">
-      <div className="flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">widget World</h1>
-        <Button size="sm">Button</Button>
-      <Input placeholder="Input" />
-      </div>
+    <div className="flex justify-center items-center h-screen">
+      <h1>Widget Page</h1>
+      {JSON.stringify(data)}
     </div>
-  )
-}
+  );
+};
+
+export default page;
