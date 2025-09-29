@@ -1,8 +1,8 @@
-import { AuthGuard } from "@/modules/auth/ui/components/auth-guard";
+import { DashboardLayout } from "@/modules/dashboard/ui/layout/dashboard-layout";
 import React from "react";
 
 const layout = ({ children }: { children: React.ReactNode }) => {
-  return <AuthGuard>{children}</AuthGuard>;
+  return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 export default layout;
