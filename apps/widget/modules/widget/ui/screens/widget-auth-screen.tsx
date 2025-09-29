@@ -84,7 +84,7 @@ const WidgetAuthScreen: React.FC = () => {
   const createContactSession = useMutation(api.public.contactSession.create);
 
   return (
-    <div className="flex flex-col h-full bg-gray-800 rounded-lg shadow-xl">
+    <div className="flex flex-col h-full rounded-lg shadow-xl">
       {/* 5. Header Section - Improved Styling */}
       <WidgetHeader>
         <div className="flex flex-col gap-y-1 px-4 py-6 border-b">
