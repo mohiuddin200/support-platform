@@ -11,18 +11,15 @@ import WidgetHeader from "../components/widget-header";
 import { LoaderIcon } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "@workspace/backend/_generated/api";
-import { CONTACT_SESSION_KEY } from "../../constant";
-import { Id } from "@workspace/backend/_generated/dataModel";
 
-type InitStep = "loading" | "session" | "settings" | "vapi" | "done";
+type InitStep = "session" | "settings" | "vapi" | "done";
 
 // Use a static organization ID
 const STATIC_ORGANIZATION_ID = "org_123456";
 
 const WidgetLoadingScreen = () => {
-  const [step, setStep] = useState<InitStep>("loading");
+  const [step, setStep] = useState<InitStep>("session");
   const [sessionValid, setSessionValid] = useState(false);
-  const [isAtomLoaded, setIsAtomLoaded] = useState(false);
   const setOrganizationId = useSetAtom(organizationIdAtom);
   const loadingMessage = useAtomValue(loadingMessageAtom);
   const setLoadingMessage = useSetAtom(loadingMessageAtom);
@@ -37,109 +34,90 @@ const WidgetLoadingScreen = () => {
     setOrganizationId(STATIC_ORGANIZATION_ID);
   }, [setOrganizationId]);
 
-  // Wait for atom to be properly hydrated from localStorage
-  useEffect(() => {
-    setLoadingMessage("Initializing...");
-
-    // Add a small delay to ensure localStorage has time to hydrate into the atom
-    const timer = setTimeout(() => {
-      console.log("Atom loading complete, contactSessionId:", contactSessionId);
-      setIsAtomLoaded(true);
-
-      // After atom is loaded, proceed to session validation step
-      if (isAtomLoaded === false) {
-        setStep("session");
-      }
-    }, 500); // 500ms should be enough for localStorage hydration
-
-    return () => clearTimeout(timer);
-  }, [contactSessionId, setLoadingMessage]);
-
-  // Validation step
+  //step 2 validation session(if exist)
   const validateContactSession = useMutation(
     api.public.contactSession.validate
   );
 
+  // useEffect(() => {
+  //   if (step !== "session") return;
+
+  //   setLoadingMessage("Finding Contact Session ID...");
+
+  //   if (!contactSessionId) {
+  //     setSessionValid(false);
+  //     setStep("done");
+  //     return;
+  //   }
+
+  //   setLoadingMessage("Finding Contact Session ID...");
+
+  //   validateContactSession({ contactSessionId })
+  //     .then((result) => {
+  //       setSessionValid(result.valid);
+  //       setStep("done");
+  //     })
+  //     .catch((error) => {
+  //       setSessionValid(false);
+  //       setStep("done");
+  //     });
+  // }, [
+  //   step,
+  //   contactSessionId,
+  //   setLoadingMessage,
+  //   validateContactSession,
+  //   setStep,
+  //   setSessionValid,
+  //   setScreen,
+  // ]);
+
   useEffect(() => {
-    if (step !== "session" || !isAtomLoaded) return;
+    if (step !== "session") return;
 
     setLoadingMessage("Finding Contact Session ID...");
-    console.log(
-      "Starting session validation, contactSessionId:",
-      contactSessionId
-    );
 
-    // First try with the atom value
-    if (contactSessionId) {
+    // 1-second delay to wait for localStorage retrieval
+    const timer = setTimeout(() => {
+      // Check for contactSessionId *after* the delay
+      if (!contactSessionId) {
+        setSessionValid(false);
+        setStep("done");
+        return;
+      }
+
+      // If contactSessionId is found, proceed with validation
+      setLoadingMessage("Validating Session..."); // Updated message for clarity
+
       validateContactSession({ contactSessionId })
         .then((result) => {
           setSessionValid(result.valid);
-          console.log("Session validation result:", result.valid);
           setStep("done");
         })
         .catch((error) => {
-          console.error("Session validation error:", error);
           setSessionValid(false);
           setStep("done");
         });
-      return;
-    }
+    }, 1000); // 1000 milliseconds = 1 second
 
-    // If atom still doesn't have it, try to get it directly from localStorage
-    const storageKey = `${CONTACT_SESSION_KEY}_${STATIC_ORGANIZATION_ID}`;
-    const storedSessionId = localStorage.getItem(storageKey);
-    console.log("Checking localStorage directly with key:", storageKey);
-    console.log("Found in localStorage:", storedSessionId);
-
-    if (storedSessionId) {
-      validateContactSession({ contactSessionId: storedSessionId as  Id<"contactSession"> })
-        .then((result) => {
-          setSessionValid(result.valid);
-          console.log("Session validation from localStorage:", result.valid);
-          setStep("done");
-        })
-        .catch((error) => {
-          console.error("Session validation error:", error);
-          setSessionValid(false);
-          setStep("done");
-        });
-    } else {
-      console.log("No contact session ID found anywhere");
-      setSessionValid(false);
-      setStep("done");
-    }
+    // Cleanup function to clear the timeout if the component unmounts
+    // or dependencies change before the timeout fires.
+    return () => clearTimeout(timer);
   }, [
     step,
-    isAtomLoaded,
     contactSessionId,
     setLoadingMessage,
     validateContactSession,
     setStep,
     setSessionValid,
+    setScreen,
   ]);
 
   useEffect(() => {
     if (step !== "done") return;
 
-    // For the final decision, check localStorage one more time if needed
-    let finalSessionId = contactSessionId;
-
-    if (!finalSessionId) {
-      const storageKey = `${CONTACT_SESSION_KEY}_${STATIC_ORGANIZATION_ID}`;
-      const storedValue = localStorage.getItem(storageKey);
-      if (storedValue) {
-        finalSessionId = storedValue as Id<"contactSession">;
-      }
-    }
-
-    const hasValidSession = finalSessionId && sessionValid;
-
-    console.log("Final check - sessionId:", finalSessionId);
-    console.log("Final check - sessionValid:", sessionValid);
-    console.log("Final check - hasValidSession:", hasValidSession);
+    const hasValidSession = contactSessionId && sessionValid;
 
     setScreen(hasValidSession ? "selection" : "auth");
-    console.log("Setting screen to:", hasValidSession ? "selection" : "auth");
   }, [step, contactSessionId, sessionValid, setScreen]);
 
   return (

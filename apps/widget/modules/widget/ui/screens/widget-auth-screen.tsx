@@ -84,7 +84,6 @@ const WidgetAuthScreen: React.FC = () => {
 
     setContactSessionId(contactSessionId);
     
-    // Change screen to selection after successful form submission
     setScreen("selection");
   };
 
