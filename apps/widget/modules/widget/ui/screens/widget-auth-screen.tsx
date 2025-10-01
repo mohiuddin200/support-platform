@@ -20,13 +20,15 @@ import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { useMutation } from "convex/react";
 import { api } from "@workspace/backend/_generated/api";
-import { vendored } from "next/dist/server/route-modules/app-page/module.compiled";
+
 import { Doc } from "@workspace/backend/_generated/dataModel";
 import { create } from "domain";
+import { contactSessionIdAtomFamily, screenAtom } from "../../atoms/widget-atoms";
+import { useSetAtom } from "jotai";
 
 // --- Type and Schema Definition ---
 
-const organizationId = "org_123456"; // Example organization ID
+const organizationId = "org_123456";
 
 // 1. Define the Zod schema for validation (removed message field)
 const formSchema = z.object({
@@ -42,6 +44,10 @@ type AuthFormValues = z.infer<typeof formSchema>;
 // --- Component ---
 
 const WidgetAuthScreen: React.FC = () => {
+  const setContactSessionId = useSetAtom(
+    contactSessionIdAtomFamily(organizationId)
+  );
+  const setScreen = useSetAtom(screenAtom);
   // 3. Initialize the form hook
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(formSchema),
@@ -76,7 +82,10 @@ const WidgetAuthScreen: React.FC = () => {
       metadata,
     });
 
-    console.log("Form contactSessionId:", contactSessionId);
+    setContactSessionId(contactSessionId);
+    
+    // Change screen to selection after successful form submission
+    setScreen("selection");
   };
 
   const { isSubmitting, isValid } = form.formState;

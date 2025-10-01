@@ -33,6 +33,25 @@ export const create = mutation({
       metadata: args.metadata,
     });
 
-    return { contactSessionId, expiresAt };
+    return contactSessionId;
+  },
+});
+
+export const validate = mutation({
+  args: {
+    contactSessionId: v.id("contactSession"),
+  },
+  handler: async (ctx, args) => {
+    const contactSession = await ctx.db.get(args.contactSessionId);
+
+    if (!contactSession) {
+      return { valid: false, reason: "contact session not found" };
+    }
+
+    if (contactSession.expiresAt < Date.now()) {
+      return { valid: false, reason: "contact session expired" };
+    }
+
+    return { valid: true, contactSession };
   },
 });
